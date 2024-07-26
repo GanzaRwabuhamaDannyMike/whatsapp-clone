@@ -34,6 +34,10 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
               <p className='text-3xl font-extralight mt-5 mb-2'>
                 WhatsApp Clone
               </p>
+              <p className='w-1/2 text-center text-gray-primary text-sm text-muted-foreground'>
+                Make calls, share your screen and get a faster experience in the
+                real time
+              </p>
               <SignInButton>
                 <Button className='rounded-full my-5 bg-green-primary hover:bg-green-secondary'>
                   Sign In to continue
