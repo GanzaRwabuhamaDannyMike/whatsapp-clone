@@ -19,6 +19,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import toast from "react-hot-toast";
+import { useConversationStore } from "@/store/chat-store";
 
 const UserListDialog = () => {
   const [selectedUsers, setSelectedUsers] = useState<Id<"users">[]>([]);
@@ -33,6 +34,9 @@ const UserListDialog = () => {
   const generateUploadUrl = useMutation(api.conversations.generateUploadUrl);
   const me = useQuery(api.users.getMe);
   const users = useQuery(api.users.getUsers);
+
+  const { selectedConversation, setSelectedConversation } =
+    useConversationStore();
 
   const handleCreateConversation = async () => {
     if (selectedUsers.length === 0) return;
@@ -49,31 +53,42 @@ const UserListDialog = () => {
         const postUrl = await generateUploadUrl();
 
         const result = await fetch(postUrl, {
-            method: "POST",
-            headers: {"Content-Type": selectedImage?.type!},
-            body: selectedImage,
-        })
+          method: "POST",
+          headers: { "Content-Type": selectedImage?.type! },
+          body: selectedImage,
+        });
 
         const { storageId } = await result.json();
-        await createConversation({
-            participants: [...selectedUsers, me?._id!],
-            isGroup: true,
-            admin: me?._id!,
-            groupName,
-            groupImage: storageId
-        })
+        conversationId = await createConversation({
+          participants: [...selectedUsers, me?._id!],
+          isGroup: true,
+          admin: me?._id!,
+          groupName,
+          groupImage: storageId,
+        });
       }
       dialogCloseRef.current?.click();
       setSelectedUsers([]);
       setGroupName("");
       setSelectedImage(null);
 
+      const conversationName = isGroup
+        ? groupName
+        : users?.find((user) => user._id === selectedUsers[0])?.name;
 
-
+      setSelectedConversation({
+        _id: conversationId,
+        participants: selectedUsers,
+        isGroup,
+        image: isGroup
+          ? renderedImage
+          : users?.find((user) => user._id === selectedUsers[0])?.image,
+        name: conversationName,
+        admin: me?._id!,
+      });
     } catch (err) {
       toast.error("Failed to create conversation");
       console.error(err);
-      
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +108,6 @@ const UserListDialog = () => {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          {/* TODO: <DialogClose /> will be here */}
           <DialogClose ref={dialogCloseRef} />
           <DialogTitle>USERS</DialogTitle>
         </DialogHeader>
@@ -109,7 +123,6 @@ const UserListDialog = () => {
             />
           </div>
         )}
-        {/* TODO: input file */}
         <input
           type='file'
           accept='image/*'
@@ -184,7 +197,6 @@ const UserListDialog = () => {
               isLoading
             }
           >
-            {/* spinner */}
             {isLoading ? (
               <div className='w-5 h-5 border-t-2 border-b-2  rounded-full animate-spin' />
             ) : (
